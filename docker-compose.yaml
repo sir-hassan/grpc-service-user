@@ -1,0 +1,28 @@
+version: '3.9'
+services:
+
+  postgres:
+    image: postgres:buster
+    environment:
+      POSTGRES_USER: myadmin
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: userdb
+      POSTGRES_INITDB_ARGS: "-A password"
+    ports:
+      - "5432:5432"
+
+  api:
+    image: ${IMG_NAME}
+    command: server
+    ports:
+      # api port
+      - "8080:8080"
+    depends_on:
+      - postgres
+
+  e2e:
+    image: ${IMG_NAME}
+    command: e2e
+    depends_on:
+      - api
+      - postgres

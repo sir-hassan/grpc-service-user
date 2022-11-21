@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package api;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/sir-hassan/grpc-service-user/api";
+
+service UserStore {
+  rpc CheckHealth(CheckHealthRequest) returns (CheckHealthReply);
+}
+
+message CheckHealthRequest {
+}
+
+message CheckHealthReply {
+  bool is_healthy = 1;
+}
