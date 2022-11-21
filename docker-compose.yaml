@@ -14,6 +14,9 @@ services:
   api:
     image: ${IMG_NAME}
     command: server
+    environment:
+      - WITH_DEBUG=true
+
     ports:
       # api port
       - "8080:8080"
@@ -23,6 +26,8 @@ services:
   e2e:
     image: ${IMG_NAME}
     command: e2e
+    environment:
+      - WITH_DEBUG=true
     depends_on:
       - api
       - postgres
