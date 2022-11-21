@@ -26,6 +26,10 @@ message User {
   string first_name = 2;
   string last_name = 3;
   string country = 4;
+
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+
 }
 
 message AddUserRequest {
@@ -58,4 +62,5 @@ message UpdateUserReply {
 message ListUsersRequest {
   int32 page = 1;
   int32 page_size = 2;
+  map<string, string> filters = 3;
 }

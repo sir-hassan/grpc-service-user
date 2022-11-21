@@ -2,11 +2,14 @@ package app
 
 import (
 	"context"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 	"github.com/sir-hassan/grpc-service-user/api"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"gorm.io/gorm"
 )
 
@@ -17,6 +20,9 @@ type User struct {
 	FirstName string
 	LastName  string
 	Country   string
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type UserStore struct {
@@ -29,11 +35,73 @@ type UserStore struct {
 var _ api.UserStoreServer = &UserStore{}
 
 func (s *UserStore) UpdateUser(ctx context.Context, req *api.UpdateUserRequest) (*api.UpdateUserReply, error) {
-	return nil, status.Error(codes.Unimplemented, "")
+	patches := map[string]any{}
+
+	if req.Id == "" {
+		return nil, status.Error(codes.InvalidArgument, "missing or empty 'id' field")
+	}
+
+	if req.FirstName != nil {
+		patches["first_name"] = *req.FirstName
+	}
+	if req.LastName != nil {
+		patches["last_name"] = *req.LastName
+	}
+	if req.Country != nil {
+		patches["country"] = *req.Country
+	}
+
+	tx := s.db.Begin()
+	tx.Model(&User{ID: req.Id}).Updates(patches)
+	if tx.Error != nil {
+		tx.Rollback()
+		s.lg.Err(tx.Error).Msg("update query in UpdateUser func")
+
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+
+	updatedUser := User{}
+	tx.First(&updatedUser, req.Id)
+	if tx.Error != nil {
+		tx.Rollback()
+		s.lg.Err(tx.Error).Msg("select query in UpdateUser func")
+
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+	tx.Commit()
+
+	s.notifier.NotifyUpdate(&updatedUser)
+
+	return &api.UpdateUserReply{}, nil
 }
 
 func (s *UserStore) DeleteUser(ctx context.Context, req *api.DeleteUserRequest) (*api.DeleteUserReply, error) {
-	return nil, status.Error(codes.Unimplemented, "")
+	if req.Id == "" {
+		return nil, status.Error(codes.InvalidArgument, "missing or empty 'id' field")
+	}
+
+	userToDelete := User{}
+	tx := s.db.Begin()
+	tx.First(&userToDelete, req.Id)
+	if tx.Error != nil {
+		tx.Rollback()
+		s.lg.Err(tx.Error).Msg("select query in DeleteUser func")
+
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+
+	tx.Delete(&User{}, req.Id)
+	if tx.Error != nil {
+		tx.Rollback()
+		s.lg.Err(tx.Error).Msg("delete query in DeleteUser func")
+
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+	tx.Commit()
+
+	s.notifier.NotifyDelete(&userToDelete)
+
+	return &api.DeleteUserReply{}, nil
 }
 
 func NewUserStore(db *gorm.DB, notifier Notifier, lg zerolog.Logger) *UserStore {
@@ -49,11 +117,13 @@ func (s *UserStore) CheckHealth(ctx context.Context, req *api.CheckHealthRequest
 
 	sqlDB, err := s.db.DB()
 	if err != nil {
+		//nolint
 		return notHealthy, nil
 	}
 
 	err = sqlDB.Ping()
 	if err != nil {
+		//nolint
 		return notHealthy, nil
 	}
 
@@ -63,9 +133,84 @@ func (s *UserStore) CheckHealth(ctx context.Context, req *api.CheckHealthRequest
 }
 
 func (s *UserStore) AddUser(ctx context.Context, req *api.AddUserRequest) (*api.AddUserReply, error) {
-	return nil, status.Error(codes.Unimplemented, "")
+	id := uuid.New().String()
+
+	if req.FirstName == "" {
+		return nil, status.Error(codes.InvalidArgument, "empty or missing 'first_name' field")
+	}
+	if req.LastName == "" {
+		return nil, status.Error(codes.InvalidArgument, "empty or missing 'last_name' field")
+	}
+	if req.Country == "" {
+		return nil, status.Error(codes.InvalidArgument, "empty or missing 'country' field")
+	}
+
+	newUser := &User{
+		ID:        id,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Country:   req.Country,
+	}
+
+	if tx := s.db.Create(newUser); tx.Error != nil {
+		s.lg.Err(tx.Error).Msg("insert query in AddUser func")
+
+		return nil, status.Error(codes.Internal, "internal server error")
+	}
+
+	s.notifier.NotifyAdd(newUser)
+
+	return &api.AddUserReply{Id: id}, nil
+}
+
+func paginateAndFilter(page int, pageSize int, filters map[string]string) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		page := page
+		pageSize := pageSize
+		offset := (page - 1) * pageSize
+
+		if len(filters) == 0 {
+			return db.Offset(offset).Limit(pageSize)
+		}
+
+		query := ""
+		var values []any
+
+		for filterName, filterVal := range filters {
+			query += "AND " + filterName + " = ?"
+			values = append(values, filterVal)
+		}
+		query = query[3:]
+
+		return db.Offset(offset).Where(query, values...).Limit(pageSize)
+	}
 }
 
 func (s *UserStore) ListUsers(req *api.ListUsersRequest, lus api.UserStore_ListUsersServer) error {
-	return status.Error(codes.Unimplemented, "")
+	var users []User
+	tx := s.db.Scopes(paginateAndFilter(int(req.Page), int(req.PageSize), req.Filters)).Find(&users)
+	if tx.Error != nil {
+		s.lg.Err(tx.Error).Msg("select query in ListUsers func")
+
+		return status.Error(codes.Internal, "internal server error")
+	}
+
+	var err error
+	for _, u := range users {
+		err = lus.Send(&api.User{
+			Id:        u.ID,
+			FirstName: u.FirstName,
+			LastName:  u.LastName,
+			Country:   u.Country,
+			CreatedAt: timestamppb.New(u.CreatedAt),
+			UpdatedAt: timestamppb.New(u.UpdatedAt),
+		})
+		if err != nil {
+			s.lg.Err(err).Msg("rpc send in ListUsers func")
+
+			return status.Error(codes.Internal, "internal server error")
+		}
+	}
+
+	return nil
 }
