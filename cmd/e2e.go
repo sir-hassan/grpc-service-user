@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -44,5 +45,42 @@ func runE2eCommand(lg zerolog.Logger) {
 		lg.Fatal().Err(err).Msg("negative health check")
 	}
 
-	lg.Info().Msg("✅ all e2e tests passed")
+	// add 10 users
+	var ids []string
+	for i := 0; i < 10; i++ {
+		u, err := client.AddUser(context.Background(), &api.AddUserRequest{
+			FirstName: "user_first_name_" + strconv.Itoa(i),
+			LastName:  "user_last_name_" + strconv.Itoa(i),
+			Country:   "country" + strconv.Itoa(i),
+		})
+		if err != nil {
+			lg.Fatal().Err(err).Msg("call add user")
+		}
+		ids = append(ids, u.Id)
+	}
+	lg.Info().Msg("✅ adding 10 users")
+
+	// update users
+	for i := 0; i < 10; i++ {
+		updatedName := "user_updated_first_name"
+		_, err = client.UpdateUser(context.Background(), &api.UpdateUserRequest{
+			Id:        ids[i],
+			FirstName: &updatedName,
+		})
+		if err != nil {
+			lg.Fatal().Err(err).Msg("call update user")
+		}
+	}
+	lg.Info().Msg("✅ updating 10 users")
+
+	// delete users
+	for i := 0; i < 10; i++ {
+		_, err = client.DeleteUser(context.Background(), &api.DeleteUserRequest{
+			Id: ids[i],
+		})
+		if err != nil {
+			lg.Fatal().Err(err).Msg("call delete user")
+		}
+	}
+	lg.Info().Msg("✅ deleting 10 users")
 }

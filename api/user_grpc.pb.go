@@ -23,6 +23,10 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UserStoreClient interface {
 	CheckHealth(ctx context.Context, in *CheckHealthRequest, opts ...grpc.CallOption) (*CheckHealthReply, error)
+	AddUser(ctx context.Context, in *AddUserRequest, opts ...grpc.CallOption) (*AddUserReply, error)
+	UpdateUser(ctx context.Context, in *UpdateUserRequest, opts ...grpc.CallOption) (*UpdateUserReply, error)
+	DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*DeleteUserReply, error)
+	ListUsers(ctx context.Context, in *ListUsersRequest, opts ...grpc.CallOption) (UserStore_ListUsersClient, error)
 }
 
 type userStoreClient struct {
@@ -42,11 +46,74 @@ func (c *userStoreClient) CheckHealth(ctx context.Context, in *CheckHealthReques
 	return out, nil
 }
 
+func (c *userStoreClient) AddUser(ctx context.Context, in *AddUserRequest, opts ...grpc.CallOption) (*AddUserReply, error) {
+	out := new(AddUserReply)
+	err := c.cc.Invoke(ctx, "/api.UserStore/AddUser", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userStoreClient) UpdateUser(ctx context.Context, in *UpdateUserRequest, opts ...grpc.CallOption) (*UpdateUserReply, error) {
+	out := new(UpdateUserReply)
+	err := c.cc.Invoke(ctx, "/api.UserStore/UpdateUser", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userStoreClient) DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*DeleteUserReply, error) {
+	out := new(DeleteUserReply)
+	err := c.cc.Invoke(ctx, "/api.UserStore/DeleteUser", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userStoreClient) ListUsers(ctx context.Context, in *ListUsersRequest, opts ...grpc.CallOption) (UserStore_ListUsersClient, error) {
+	stream, err := c.cc.NewStream(ctx, &UserStore_ServiceDesc.Streams[0], "/api.UserStore/ListUsers", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &userStoreListUsersClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type UserStore_ListUsersClient interface {
+	Recv() (*User, error)
+	grpc.ClientStream
+}
+
+type userStoreListUsersClient struct {
+	grpc.ClientStream
+}
+
+func (x *userStoreListUsersClient) Recv() (*User, error) {
+	m := new(User)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // UserStoreServer is the server API for UserStore service.
 // All implementations must embed UnimplementedUserStoreServer
 // for forward compatibility
 type UserStoreServer interface {
 	CheckHealth(context.Context, *CheckHealthRequest) (*CheckHealthReply, error)
+	AddUser(context.Context, *AddUserRequest) (*AddUserReply, error)
+	UpdateUser(context.Context, *UpdateUserRequest) (*UpdateUserReply, error)
+	DeleteUser(context.Context, *DeleteUserRequest) (*DeleteUserReply, error)
+	ListUsers(*ListUsersRequest, UserStore_ListUsersServer) error
 	mustEmbedUnimplementedUserStoreServer()
 }
 
@@ -56,6 +123,18 @@ type UnimplementedUserStoreServer struct {
 
 func (UnimplementedUserStoreServer) CheckHealth(context.Context, *CheckHealthRequest) (*CheckHealthReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckHealth not implemented")
+}
+func (UnimplementedUserStoreServer) AddUser(context.Context, *AddUserRequest) (*AddUserReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddUser not implemented")
+}
+func (UnimplementedUserStoreServer) UpdateUser(context.Context, *UpdateUserRequest) (*UpdateUserReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateUser not implemented")
+}
+func (UnimplementedUserStoreServer) DeleteUser(context.Context, *DeleteUserRequest) (*DeleteUserReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteUser not implemented")
+}
+func (UnimplementedUserStoreServer) ListUsers(*ListUsersRequest, UserStore_ListUsersServer) error {
+	return status.Errorf(codes.Unimplemented, "method ListUsers not implemented")
 }
 func (UnimplementedUserStoreServer) mustEmbedUnimplementedUserStoreServer() {}
 
@@ -88,6 +167,81 @@ func _UserStore_CheckHealth_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserStore_AddUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserStoreServer).AddUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.UserStore/AddUser",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserStoreServer).AddUser(ctx, req.(*AddUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserStore_UpdateUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserStoreServer).UpdateUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.UserStore/UpdateUser",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserStoreServer).UpdateUser(ctx, req.(*UpdateUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserStore_DeleteUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserStoreServer).DeleteUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.UserStore/DeleteUser",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserStoreServer).DeleteUser(ctx, req.(*DeleteUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserStore_ListUsers_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ListUsersRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(UserStoreServer).ListUsers(m, &userStoreListUsersServer{stream})
+}
+
+type UserStore_ListUsersServer interface {
+	Send(*User) error
+	grpc.ServerStream
+}
+
+type userStoreListUsersServer struct {
+	grpc.ServerStream
+}
+
+func (x *userStoreListUsersServer) Send(m *User) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // UserStore_ServiceDesc is the grpc.ServiceDesc for UserStore service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -99,7 +253,25 @@ var UserStore_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "CheckHealth",
 			Handler:    _UserStore_CheckHealth_Handler,
 		},
+		{
+			MethodName: "AddUser",
+			Handler:    _UserStore_AddUser_Handler,
+		},
+		{
+			MethodName: "UpdateUser",
+			Handler:    _UserStore_UpdateUser_Handler,
+		},
+		{
+			MethodName: "DeleteUser",
+			Handler:    _UserStore_DeleteUser_Handler,
+		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "ListUsers",
+			Handler:       _UserStore_ListUsers_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "api/user.proto",
 }

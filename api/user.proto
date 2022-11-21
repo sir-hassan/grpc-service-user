@@ -8,6 +8,10 @@ option go_package = "github.com/sir-hassan/grpc-service-user/api";
 
 service UserStore {
   rpc CheckHealth(CheckHealthRequest) returns (CheckHealthReply);
+  rpc AddUser(AddUserRequest) returns (AddUserReply);
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserReply);
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserReply);
+  rpc ListUsers(ListUsersRequest) returns (stream User);
 }
 
 message CheckHealthRequest {
@@ -15,4 +19,43 @@ message CheckHealthRequest {
 
 message CheckHealthReply {
   bool is_healthy = 1;
+}
+
+message User {
+  string id = 1;
+  string first_name = 2;
+  string last_name = 3;
+  string country = 4;
+}
+
+message AddUserRequest {
+  string first_name = 1;
+  string last_name = 2;
+  string country = 3;
+}
+
+message AddUserReply {
+  string id = 1;
+}
+
+message DeleteUserRequest {
+  string id = 1;
+}
+
+message DeleteUserReply {
+}
+
+message UpdateUserRequest {
+  string id = 1;
+  optional string first_name = 2;
+  optional string last_name = 3;
+  optional string country = 4;
+}
+
+message UpdateUserReply {
+}
+
+message ListUsersRequest {
+  int32 page = 1;
+  int32 page_size = 2;
 }
