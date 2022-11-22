@@ -39,7 +39,7 @@ func runServerCommand(lg zerolog.Logger) {
 	var opts []grpc.ServerOption
 	grpcServer := grpc.NewServer(opts...)
 	reflection.Register(grpcServer)
-	api.RegisterUserStoreServer(grpcServer, app.NewUserStore(db, app.NewMockedNotifier(), lg))
+	api.RegisterUserStoreServer(grpcServer, app.NewUserStore(db, app.NewHTTPNotifier(lg), lg))
 
 	// Handle process termination.
 	sigChan := make(chan os.Signal, 1)

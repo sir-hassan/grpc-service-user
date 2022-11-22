@@ -52,7 +52,7 @@ func (s *UserStore) UpdateUser(ctx context.Context, req *api.UpdateUserRequest) 
 	}
 
 	tx := s.db.Begin()
-	tx.Model(&User{ID: req.Id}).Updates(patches)
+	tx.Where("id = ?", req.Id).Model(&User{}).Updates(patches)
 	if tx.Error != nil {
 		tx.Rollback()
 		s.lg.Err(tx.Error).Msg("update query in UpdateUser func")
@@ -61,7 +61,7 @@ func (s *UserStore) UpdateUser(ctx context.Context, req *api.UpdateUserRequest) 
 	}
 
 	updatedUser := User{}
-	tx.First(&updatedUser, req.Id)
+	tx.Where("id = ?", req.Id).First(&updatedUser)
 	if tx.Error != nil {
 		tx.Rollback()
 		s.lg.Err(tx.Error).Msg("select query in UpdateUser func")
@@ -82,7 +82,7 @@ func (s *UserStore) DeleteUser(ctx context.Context, req *api.DeleteUserRequest) 
 
 	userToDelete := User{}
 	tx := s.db.Begin()
-	tx.First(&userToDelete, req.Id)
+	tx.Where("id = ?", req.Id).First(&userToDelete)
 	if tx.Error != nil {
 		tx.Rollback()
 		s.lg.Err(tx.Error).Msg("select query in DeleteUser func")
@@ -90,7 +90,7 @@ func (s *UserStore) DeleteUser(ctx context.Context, req *api.DeleteUserRequest) 
 		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
-	tx.Delete(&User{}, req.Id)
+	tx.Where("id = ?", req.Id).Delete(&User{})
 	if tx.Error != nil {
 		tx.Rollback()
 		s.lg.Err(tx.Error).Msg("delete query in DeleteUser func")

@@ -3,11 +3,13 @@ package app
 import "sync"
 
 // Notifier is very simple interface that notify other systems for user changes.
+// The implementations should consider being asynchronous, this is why there are no errors returned here.
+// Errors should be handled and logged by the concrete implementations.
 
 type Notifier interface {
 	NotifyAdd(newUser *User)
-	NotifyDelete(DeletedUser *User)
-	NotifyUpdate(UpdatedUser *User)
+	NotifyDelete(deletedUser *User)
+	NotifyUpdate(updatedUser *User)
 }
 
 type notification struct {
@@ -43,18 +45,6 @@ func (n *MockedNotifier) NotifyUpdate(updatedUser *User) {
 	n.lock.Lock()
 	defer n.lock.Unlock()
 	n.list = append(n.list, notification{user: updatedUser, action: "update"})
-}
-
-func (n *MockedNotifier) GetCompiledData() string {
-	n.lock.Lock()
-	defer n.lock.Unlock()
-
-	output := ""
-	for _, item := range n.list {
-		output += item.action + " " + item.user.FirstName + "\n"
-	}
-
-	return output
 }
 
 func (n *MockedNotifier) Reset() {
