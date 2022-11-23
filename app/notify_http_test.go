@@ -49,11 +49,11 @@ func TestHTTPNotifier_Notify(t *testing.T) {
 
 	expectHTTPCalls := []string{
 		//nolint
-		`/add -> {"DeletedAt":null,"ID":"111","FirstName":"","LastName":"","Country":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}`,
+		`/add -> {"ID":"111","FirstName":"","LastName":"","Country":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}`,
 		//nolint
-		`/update -> {"DeletedAt":null,"ID":"222","FirstName":"","LastName":"","Country":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}`,
+		`/update -> {"ID":"222","FirstName":"","LastName":"","Country":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}`,
 		//nolint
-		`/delete -> {"DeletedAt":null,"ID":"333","FirstName":"","LastName":"","Country":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}`,
+		`/delete -> {"ID":"333","FirstName":"","LastName":"","Country":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}`,
 	}
 
 	if !reflect.DeepEqual(webHookCalls, expectHTTPCalls) {

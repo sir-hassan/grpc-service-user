@@ -14,8 +14,6 @@ import (
 )
 
 type User struct {
-	gorm.Model
-
 	ID        string
 	FirstName string
 	LastName  string
@@ -59,19 +57,19 @@ func (s *UserStore) UpdateUser(ctx context.Context, req *api.UpdateUserRequest) 
 
 		return nil, status.Error(codes.Internal, "internal server error")
 	}
-	if tx.RowsAffected == 0 {
-		tx.Rollback()
-
-		return nil, status.Error(codes.NotFound, "id not found")
-	}
 
 	updatedUser := User{}
-	tx.Where("id = ?", req.Id).First(&updatedUser)
+	tx.First(&updatedUser, "id = ?", req.Id)
 	if tx.Error != nil {
 		tx.Rollback()
 		s.lg.Err(tx.Error).Msg("select query in UpdateUser func")
 
 		return nil, status.Error(codes.Internal, "internal server error")
+	}
+	if updatedUser.ID == "" {
+		tx.Rollback()
+
+		return nil, status.Error(codes.NotFound, "id not found")
 	}
 	tx.Commit()
 
@@ -87,14 +85,14 @@ func (s *UserStore) DeleteUser(ctx context.Context, req *api.DeleteUserRequest) 
 
 	userToDelete := User{}
 	tx := s.db.Begin()
-	tx.Where("id = ?", req.Id).First(&userToDelete)
+	tx.First(&userToDelete, "id = ?", req.Id)
 	if tx.Error != nil {
 		tx.Rollback()
 		s.lg.Err(tx.Error).Msg("select query in DeleteUser func")
 
 		return nil, status.Error(codes.Internal, "internal server error")
 	}
-	if tx.RowsAffected == 0 {
+	if userToDelete.ID == "" {
 		tx.Rollback()
 
 		return nil, status.Error(codes.NotFound, "id not found")
