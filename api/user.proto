@@ -25,17 +25,22 @@ message User {
   string id = 1;
   string first_name = 2;
   string last_name = 3;
-  string country = 4;
+  string nickname = 4;
+  string password = 5;
+  string email = 6;
+  string country = 7;
 
-  google.protobuf.Timestamp created_at = 5;
-  google.protobuf.Timestamp updated_at = 6;
-
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
 }
 
 message AddUserRequest {
   string first_name = 1;
   string last_name = 2;
-  string country = 3;
+  string nickname = 3;
+  string password = 4;
+  string email = 5;
+  string country = 6;
 }
 
 message AddUserReply {
@@ -54,6 +59,9 @@ message UpdateUserRequest {
   optional string first_name = 2;
   optional string last_name = 3;
   optional string country = 4;
+  optional string nickname = 5;
+  optional string password = 6;
+  optional string email = 7;
 }
 
 message UpdateUserReply {

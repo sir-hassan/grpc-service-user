@@ -45,25 +45,7 @@ func TestUserStore_AddUser_ValidCases(t *testing.T) {
 			req: &api.AddUserRequest{
 				FirstName: "fn1",
 				LastName:  "ln1",
-				Country:   "de",
-			},
-			wantErr: false,
-		},
-		{
-			name: "valid_case",
-			req: &api.AddUserRequest{
-				FirstName: "fn1",
-				LastName:  "ln1",
-				Country:   "de",
-			},
-			wantErr: false,
-		},
-		{
-			name: "valid_case",
-			req: &api.AddUserRequest{
-				FirstName: "fn1",
-				LastName:  "ln1",
-				Country:   "de",
+				Email:     "me@example.com",
 			},
 			wantErr: false,
 		},
@@ -106,7 +88,7 @@ func TestUserStore_UpdateUser_ValidCase(t *testing.T) {
 		u, err := s.AddUser(context.Background(), &api.AddUserRequest{
 			FirstName: "user_first_name_" + strconv.Itoa(i),
 			LastName:  "user_last_name_" + strconv.Itoa(i),
-			Country:   "country" + strconv.Itoa(i),
+			Email:     "some_" + strconv.Itoa(i) + "@example.com",
 		})
 		if err != nil {
 			t.Errorf("unexpected error on call add user: %v", err)
@@ -148,7 +130,7 @@ func TestUserStore_DeleteUser_ValidCase(t *testing.T) {
 		u, err := s.AddUser(context.Background(), &api.AddUserRequest{
 			FirstName: "user_first_name_" + strconv.Itoa(i),
 			LastName:  "user_last_name_" + strconv.Itoa(i),
-			Country:   "country" + strconv.Itoa(i),
+			Email:     "some_" + strconv.Itoa(i) + "@example.com",
 		})
 		if err != nil {
 			t.Errorf("unexpected error on call add user: %v", err)

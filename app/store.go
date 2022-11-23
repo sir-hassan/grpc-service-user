@@ -17,7 +17,11 @@ type User struct {
 	ID        string
 	FirstName string
 	LastName  string
-	Country   string
+
+	Nickname string
+	Password string
+	Email    string
+	Country  string
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -44,6 +48,15 @@ func (s *UserStore) UpdateUser(ctx context.Context, req *api.UpdateUserRequest) 
 	}
 	if req.LastName != nil {
 		patches["last_name"] = *req.LastName
+	}
+	if req.Nickname != nil {
+		patches["nickname"] = *req.Nickname
+	}
+	if req.Password != nil {
+		patches["password"] = *req.Password
+	}
+	if req.Email != nil {
+		patches["email"] = *req.Email
 	}
 	if req.Country != nil {
 		patches["country"] = *req.Country
@@ -143,20 +156,24 @@ func (s *UserStore) CheckHealth(ctx context.Context, req *api.CheckHealthRequest
 func (s *UserStore) AddUser(ctx context.Context, req *api.AddUserRequest) (*api.AddUserReply, error) {
 	id := uuid.New().String()
 
+	// check for missing required fields
 	if req.FirstName == "" {
 		return nil, status.Error(codes.InvalidArgument, "empty or missing 'first_name' field")
 	}
 	if req.LastName == "" {
 		return nil, status.Error(codes.InvalidArgument, "empty or missing 'last_name' field")
 	}
-	if req.Country == "" {
-		return nil, status.Error(codes.InvalidArgument, "empty or missing 'country' field")
+	if req.Email == "" {
+		return nil, status.Error(codes.InvalidArgument, "empty or missing 'email' field")
 	}
 
 	newUser := &User{
 		ID:        id,
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
+		Nickname:  req.Nickname,
+		Password:  req.Password,
+		Email:     req.Email,
 		Country:   req.Country,
 	}
 
@@ -209,6 +226,9 @@ func (s *UserStore) ListUsers(req *api.ListUsersRequest, lus api.UserStore_ListU
 			Id:        u.ID,
 			FirstName: u.FirstName,
 			LastName:  u.LastName,
+			Nickname:  u.Nickname,
+			Password:  u.Password,
+			Email:     u.Email,
 			Country:   u.Country,
 			CreatedAt: timestamppb.New(u.CreatedAt),
 			UpdatedAt: timestamppb.New(u.UpdatedAt),
