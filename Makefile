@@ -4,7 +4,6 @@ BUF_VERSION:=latest
 
 
 test:
-	test -z '$(shell gofumpt -l .)'
 	test -z '$(shell gofmt -s -l .)'
 	go vet ./...
 	

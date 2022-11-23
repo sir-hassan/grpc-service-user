@@ -4,8 +4,8 @@ services:
   postgres:
     image: postgres:buster
     environment:
-      POSTGRES_USER: myadmin
-      POSTGRES_PASSWORD: mypassword
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
       POSTGRES_DB: userdb
       POSTGRES_INITDB_ARGS: "-A password"
     ports:
@@ -15,7 +15,13 @@ services:
     image: ${IMG_NAME}
     command: server
     environment:
-      - WITH_DEBUG=true
+      PORT: 8080
+      WITH_DEBUG: true
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: userdb
 
     ports:
       # api port

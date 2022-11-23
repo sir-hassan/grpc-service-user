@@ -1,0 +1,7 @@
+bin
+.idea
+*.env
+docker-compose*
+*.draft.*
+README.md
+Makefile

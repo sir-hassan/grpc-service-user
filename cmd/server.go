@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/caarlos0/env/v6"
 	"github.com/rs/zerolog"
 	"github.com/sir-hassan/grpc-service-user/api"
 	"github.com/sir-hassan/grpc-service-user/app"
@@ -18,26 +19,49 @@ import (
 	"gorm.io/gorm"
 )
 
-const defaultPort = 8080
+const (
+	notifierSize = 1000
+)
+
+type envVars struct {
+	Port int `env:"PORT" envDefault:"8080"`
+
+	PostgresHost     string `env:"POSTGRES_HOST" envDefault:"postgres"`
+	PostgresPort     int    `env:"POSTGRES_PORT" envDefault:"5432"`
+	PostgresUser     string `env:"POSTGRES_USER" envDefault:"admin"`
+	PostgresPassword string `env:"POSTGRES_PASSWORD" envDefault:"password"`
+	PostgresDB       string `env:"POSTGRES_DB" envDefault:"userdb"`
+
+	NotifierWebHooks []string `env:"NOTIFIER_WEBHOOKS" envSeparator:","`
+}
 
 func runServerCommand(lg zerolog.Logger) {
-	dsn := "host=postgres user=myadmin password=mypassword dbname=userdb port=5432 sslmode=disable TimeZone=Europe/Berlin"
+	cfg := envVars{}
+	if err := env.Parse(&cfg); err != nil {
+		lg.Fatal().Err(err).Msg("couldn't parse env variables")
+	}
+	lg.Debug().Str("env_vars", fmt.Sprintf("%+v", cfg)).Msg("calculated env vars")
+
+	dsn := fmt.Sprintf(
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable TimeZone=Europe/Berlin",
+		cfg.PostgresHost, cfg.PostgresPort, cfg.PostgresUser, cfg.PostgresPassword, cfg.PostgresDB,
+	)
+	lg.Debug().Str("dsn", dsn).Msg("calculated postgres dns string")
+
 	db, err := createDatabase(dsn, lg)
 	if err != nil {
 		lg.Fatal().Err(err).Msg("connecting to database failed")
 	}
 	lg.Info().Msg("connected to database")
 
-	port := defaultPort
-
-	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", port))
+	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", cfg.Port))
 	if err != nil {
 		lg.Fatal().Err(err).Msg("tcp listen")
 	}
 
-	lg.Info().Int("port", port).Msg("start tcp listener")
+	lg.Info().Int("port", cfg.Port).Msg("start tcp listener")
 
-	notifier := app.NewHTTPNotifier(lg, http.DefaultClient, []string{"https://webhook.site/49525789-a6ae-4f41-8518-4c2d3ae8f4c3"}, 100)
+	notifier := app.NewHTTPNotifier(lg, http.DefaultClient, cfg.NotifierWebHooks, notifierSize)
 
 	cancelNotifierChan := make(chan any)
 	doneNotifierChan := notifier.Start(cancelNotifierChan)

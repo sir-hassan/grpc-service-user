@@ -22,7 +22,7 @@ func TestHTTPNotifier_Notify(t *testing.T) {
 		defer lock.Unlock()
 		data, _ := io.ReadAll(r.Body)
 		webHookCalls = append(webHookCalls, r.URL.Path+" -> "+string(data))
-		w.Write([]byte("ok"))
+		_, _ = w.Write([]byte("ok"))
 	}))
 	defer svr.Close()
 
@@ -48,8 +48,11 @@ func TestHTTPNotifier_Notify(t *testing.T) {
 	<-doneNotifierChan
 
 	expectHTTPCalls := []string{
+		//nolint
 		`/add -> {"DeletedAt":null,"ID":"111","FirstName":"","LastName":"","Country":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}`,
+		//nolint
 		`/update -> {"DeletedAt":null,"ID":"222","FirstName":"","LastName":"","Country":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}`,
+		//nolint
 		`/delete -> {"DeletedAt":null,"ID":"333","FirstName":"","LastName":"","Country":"","CreatedAt":"0001-01-01T00:00:00Z","UpdatedAt":"0001-01-01T00:00:00Z"}`,
 	}
 
