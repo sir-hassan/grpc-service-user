@@ -8,26 +8,73 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type HTTPNotifier struct {
-	hook   string
-	lg     zerolog.Logger
-	client *http.Client
+type queueMessage struct {
+	webHook string
+	user    *User
+	typ     NotificationType
 }
 
-func NewHTTPNotifier(lg zerolog.Logger) *HTTPNotifier {
+// HTTPNotifier implements Notifier in an asynchronous manner. HTTPNotifier appends notifications to be sent in a
+// channel and a goroutine (spawned by Start()) consumes that channel and fires the http requests. This is a very simple
+// FIFO queueing solutions.
+type HTTPNotifier struct {
+	lg     zerolog.Logger
+	client *http.Client
+
+	webHooks []string
+
+	// Very simple fifo queue to implement an asynchronous Notifier.
+	queue chan queueMessage
+}
+
+func NewHTTPNotifier(lg zerolog.Logger, httpClient *http.Client, webHooks []string, queueSize int) *HTTPNotifier {
 	return &HTTPNotifier{
-		// http.DefaultClient should handle cashing and connection pooling out of the box.
-		client: http.DefaultClient,
-		lg:     lg,
+		lg:       lg,
+		client:   httpClient,
+		webHooks: webHooks,
+		queue:    make(chan queueMessage, queueSize),
 	}
 }
 
-func (n *HTTPNotifier) notify(user *User, action string) {
-	n.hook = "https://webhook.site/49525789-a6ae-4f41-8518-4c2d3ae8f4c3"
-	url := n.hook + "/" + action
+func (n *HTTPNotifier) Start(cancelChan chan any) chan any {
+	doneChan := make(chan any)
+	go func() {
+	loop:
+		for {
+			select {
+			case msg := <-n.queue:
+				n.notify(msg.webHook, msg.user, msg.typ)
+			case <-cancelChan:
+				break loop
+			}
+		}
+		n.lg.Info().Msg("http notifier stopped")
+		close(doneChan)
+	}()
+
+	n.lg.Info().Msg("http notifier started")
+
+	return doneChan
+}
+
+func (n *HTTPNotifier) notify(webhook string, user *User, typ NotificationType) {
+	var action string
+	switch typ {
+	case UpdateNotification:
+		action = "delete"
+	case DeleteNotification:
+		action = "update"
+	case AddNotification:
+		action = "add"
+	default:
+		n.lg.Fatal().Int("typ", int(typ)).Msg("logic error, unexpected typ value")
+	}
+
+	url := webhook + "/" + action
 	jsonStr, err := json.Marshal(user)
 	if err != nil {
 		n.lg.Err(err).Str("url", url).Msg("marshaling post data to webhook ")
+
 		return
 	}
 
@@ -46,16 +93,14 @@ func (n *HTTPNotifier) notify(user *User, action string) {
 	n.lg.Info().Str("url", url).Msg("post request to webhook successful")
 }
 
-func (n *HTTPNotifier) NotifyAdd(newUser *User) {
-	n.notify(newUser, "add")
-}
-
-func (n *HTTPNotifier) NotifyDelete(deletedUser *User) {
-	n.notify(deletedUser, "delete")
-}
-
-func (n *HTTPNotifier) NotifyUpdate(updatedUser *User) {
-	n.notify(updatedUser, "update")
+func (n *HTTPNotifier) Notify(user *User, typ NotificationType) {
+	for _, webHook := range n.webHooks {
+		n.queue <- queueMessage{
+			webHook: webHook,
+			user:    user,
+			typ:     typ,
+		}
+	}
 }
 
 var _ Notifier = &HTTPNotifier{}

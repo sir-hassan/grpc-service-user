@@ -70,7 +70,7 @@ func (s *UserStore) UpdateUser(ctx context.Context, req *api.UpdateUserRequest) 
 	}
 	tx.Commit()
 
-	s.notifier.NotifyUpdate(&updatedUser)
+	s.notifier.Notify(&updatedUser, UpdateNotification)
 
 	return &api.UpdateUserReply{}, nil
 }
@@ -99,7 +99,7 @@ func (s *UserStore) DeleteUser(ctx context.Context, req *api.DeleteUserRequest) 
 	}
 	tx.Commit()
 
-	s.notifier.NotifyDelete(&userToDelete)
+	s.notifier.Notify(&userToDelete, DeleteNotification)
 
 	return &api.DeleteUserReply{}, nil
 }
@@ -158,7 +158,7 @@ func (s *UserStore) AddUser(ctx context.Context, req *api.AddUserRequest) (*api.
 		return nil, status.Error(codes.Internal, "internal server error")
 	}
 
-	s.notifier.NotifyAdd(newUser)
+	s.notifier.Notify(newUser, AddNotification)
 
 	return &api.AddUserReply{Id: id}, nil
 }

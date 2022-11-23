@@ -1,56 +1,58 @@
 package app
 
-import "sync"
+import (
+	"fmt"
+	"sync"
+)
 
 // Notifier is very simple interface that notify other systems for user changes.
 // The implementations should consider being asynchronous, this is why there are no errors returned here.
 // Errors should be handled and logged by the concrete implementations.
 
-type Notifier interface {
-	NotifyAdd(newUser *User)
-	NotifyDelete(deletedUser *User)
-	NotifyUpdate(updatedUser *User)
-}
+type NotificationType int
 
-type notification struct {
-	user   *User
-	action string
+const (
+	AddNotification NotificationType = iota
+	DeleteNotification
+	UpdateNotification
+)
+
+type Notifier interface {
+	Notify(user *User, typ NotificationType)
 }
 
 type MockedNotifier struct {
-	list []notification
-	lock *sync.Mutex
+	actionsList []string
+	lock        *sync.Mutex
 }
 
 func NewMockedNotifier() *MockedNotifier {
 	return &MockedNotifier{
-		list: []notification{},
-		lock: &sync.Mutex{},
+		actionsList: []string{},
+		lock:        &sync.Mutex{},
 	}
 }
 
-func (n *MockedNotifier) NotifyAdd(newUser *User) {
+func (n *MockedNotifier) Notify(user *User, typ NotificationType) {
 	n.lock.Lock()
 	defer n.lock.Unlock()
-	n.list = append(n.list, notification{user: newUser, action: "add"})
-}
 
-func (n *MockedNotifier) NotifyDelete(deletedUser *User) {
-	n.lock.Lock()
-	defer n.lock.Unlock()
-	n.list = append(n.list, notification{user: deletedUser, action: "delete"})
-}
-
-func (n *MockedNotifier) NotifyUpdate(updatedUser *User) {
-	n.lock.Lock()
-	defer n.lock.Unlock()
-	n.list = append(n.list, notification{user: updatedUser, action: "update"})
+	switch typ {
+	case UpdateNotification:
+		n.actionsList = append(n.actionsList, "update")
+	case DeleteNotification:
+		n.actionsList = append(n.actionsList, "delete")
+	case AddNotification:
+		n.actionsList = append(n.actionsList, "add")
+	default:
+		panic(fmt.Sprintf("logic error, unexpected typ: %v in Notify()\n", typ))
+	}
 }
 
 func (n *MockedNotifier) Reset() {
 	n.lock.Lock()
 	defer n.lock.Unlock()
-	n.list = []notification{}
+	n.actionsList = []string{}
 }
 
 func (n *MockedNotifier) ActionCallsCount(action string) int {
@@ -58,8 +60,8 @@ func (n *MockedNotifier) ActionCallsCount(action string) int {
 	defer n.lock.Unlock()
 
 	count := 0
-	for _, item := range n.list {
-		if item.action == action {
+	for _, item := range n.actionsList {
+		if item == action {
 			count++
 		}
 	}
