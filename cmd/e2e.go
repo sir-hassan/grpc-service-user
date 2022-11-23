@@ -51,7 +51,7 @@ func runE2eCommand(lg zerolog.Logger) {
 		u, err := client.AddUser(context.Background(), &api.AddUserRequest{
 			FirstName: "user_first_name_" + strconv.Itoa(i),
 			LastName:  "user_last_name_" + strconv.Itoa(i),
-			Country:   "country" + strconv.Itoa(i),
+			Email:     "some_" + strconv.Itoa(i) + "@example.com",
 		})
 		if err != nil {
 			lg.Fatal().Err(err).Msg("call add user")

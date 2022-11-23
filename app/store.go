@@ -190,8 +190,15 @@ func (s *UserStore) AddUser(ctx context.Context, req *api.AddUserRequest) (*api.
 
 func paginateAndFilter(page int, pageSize int, filters map[string]string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
-		page := page
-		pageSize := pageSize
+		// normalize input
+		if page < 1 {
+			// default page
+			page = 1
+		}
+		if pageSize < 1 {
+			// default page size
+			pageSize = 10
+		}
 		offset := (page - 1) * pageSize
 
 		if len(filters) == 0 {

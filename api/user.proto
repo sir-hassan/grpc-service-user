@@ -18,25 +18,25 @@ message CheckHealthRequest {
 }
 
 message CheckHealthReply {
-  bool is_healthy = 1;
+  bool is_healthy = 1 [json_name = "is_healthy"];
 }
 
 message User {
   string id = 1;
-  string first_name = 2;
-  string last_name = 3;
+  string first_name = 2 [json_name = "first_name"];
+  string last_name = 3 [json_name = "last_name"];
   string nickname = 4;
   string password = 5;
   string email = 6;
   string country = 7;
 
-  google.protobuf.Timestamp created_at = 8;
-  google.protobuf.Timestamp updated_at = 9;
+  google.protobuf.Timestamp created_at = 8 [json_name = "created_at"];
+  google.protobuf.Timestamp updated_at = 9 [json_name = "updated_at"];
 }
 
 message AddUserRequest {
-  string first_name = 1;
-  string last_name = 2;
+  string first_name = 1 [json_name = "first_name"];
+  string last_name = 2 [json_name = "last_name"];
   string nickname = 3;
   string password = 4;
   string email = 5;
@@ -56,8 +56,8 @@ message DeleteUserReply {
 
 message UpdateUserRequest {
   string id = 1;
-  optional string first_name = 2;
-  optional string last_name = 3;
+  optional string first_name = 2 [json_name = "first_name"];
+  optional string last_name = 3 [json_name = "last_name"];
   optional string country = 4;
   optional string nickname = 5;
   optional string password = 6;
