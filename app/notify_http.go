@@ -61,9 +61,9 @@ func (n *HTTPNotifier) notify(webhook string, user *User, typ NotificationType) 
 	var action string
 	switch typ {
 	case UpdateNotification:
-		action = "delete"
-	case DeleteNotification:
 		action = "update"
+	case DeleteNotification:
+		action = "delete"
 	case AddNotification:
 		action = "add"
 	default:

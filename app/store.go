@@ -59,6 +59,11 @@ func (s *UserStore) UpdateUser(ctx context.Context, req *api.UpdateUserRequest) 
 
 		return nil, status.Error(codes.Internal, "internal server error")
 	}
+	if tx.RowsAffected == 0 {
+		tx.Rollback()
+
+		return nil, status.Error(codes.NotFound, "id not found")
+	}
 
 	updatedUser := User{}
 	tx.Where("id = ?", req.Id).First(&updatedUser)
@@ -88,6 +93,11 @@ func (s *UserStore) DeleteUser(ctx context.Context, req *api.DeleteUserRequest) 
 		s.lg.Err(tx.Error).Msg("select query in DeleteUser func")
 
 		return nil, status.Error(codes.Internal, "internal server error")
+	}
+	if tx.RowsAffected == 0 {
+		tx.Rollback()
+
+		return nil, status.Error(codes.NotFound, "id not found")
 	}
 
 	tx.Where("id = ?", req.Id).Delete(&User{})

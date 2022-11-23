@@ -3,6 +3,7 @@ package app_test
 import (
 	"context"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/glebarez/sqlite"
@@ -171,5 +172,105 @@ func TestUserStore_DeleteUser_ValidCase(t *testing.T) {
 	}
 	if notifier.ActionCallsCount("delete") != 1 {
 		t.Errorf("AddUser() triggered invalid notification")
+	}
+}
+
+func TestUserStore_DeleteUser_ErrorCases(t *testing.T) {
+	tests := []struct {
+		name      string
+		id        string
+		wantError string
+	}{
+		{
+			name:      "invalid id",
+			id:        "some_uuid",
+			wantError: "code = NotFound",
+		},
+		{
+			name:      "empty id",
+			id:        "",
+			wantError: "code = InvalidArgument",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db, err := makeMockDB()
+			if err != nil {
+				t.Errorf("create mock db: %v", err)
+			}
+			notifier := app.NewMockedNotifier()
+			s := app.NewUserStore(db, notifier, zerolog.Logger{})
+
+			reply, err := s.DeleteUser(context.Background(), &api.DeleteUserRequest{
+				Id: tt.id,
+			})
+			if reply != nil {
+				t.Errorf("expect nil reply, got: %v", reply)
+			}
+			if !strings.Contains(err.Error(), tt.wantError) {
+				t.Errorf("unexpected error, want: %s, got: %s", tt.wantError, err.Error())
+			}
+
+			if notifier.ActionCallsCount("add") != 0 {
+				t.Errorf("AddUser() triggered invalid notification")
+			}
+			if notifier.ActionCallsCount("update") != 0 {
+				t.Errorf("AddUser() triggered invalid notification")
+			}
+			if notifier.ActionCallsCount("delete") != 0 {
+				t.Errorf("AddUser() triggered invalid notification")
+			}
+		})
+	}
+}
+
+func TestUserStore_UpdateUser_ErrorCases(t *testing.T) {
+	tests := []struct {
+		name      string
+		id        string
+		wantError string
+	}{
+		{
+			name:      "invalid id",
+			id:        "some_uuid",
+			wantError: "code = NotFound",
+		},
+		{
+			name:      "empty id",
+			id:        "",
+			wantError: "code = InvalidArgument",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db, err := makeMockDB()
+			if err != nil {
+				t.Errorf("create mock db: %v", err)
+			}
+			notifier := app.NewMockedNotifier()
+			s := app.NewUserStore(db, notifier, zerolog.Logger{})
+
+			someStr := "someString"
+			reply, err := s.UpdateUser(context.Background(), &api.UpdateUserRequest{
+				Id:        tt.id,
+				FirstName: &someStr,
+			})
+			if reply != nil {
+				t.Errorf("expect nil reply, got: %v", reply)
+			}
+			if !strings.Contains(err.Error(), tt.wantError) {
+				t.Errorf("unexpected error, want: %s, got: %s", tt.wantError, err.Error())
+			}
+
+			if notifier.ActionCallsCount("add") != 0 {
+				t.Errorf("AddUser() triggered invalid notification")
+			}
+			if notifier.ActionCallsCount("update") != 0 {
+				t.Errorf("AddUser() triggered invalid notification")
+			}
+			if notifier.ActionCallsCount("delete") != 0 {
+				t.Errorf("AddUser() triggered invalid notification")
+			}
+		})
 	}
 }

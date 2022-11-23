@@ -36,11 +36,11 @@ func TestHTTPNotifier_Notify(t *testing.T) {
 
 	notifier.Notify(&app.User{
 		ID: "222",
-	}, app.DeleteNotification)
+	}, app.UpdateNotification)
 
 	notifier.Notify(&app.User{
 		ID: "333",
-	}, app.UpdateNotification)
+	}, app.DeleteNotification)
 
 	time.Sleep(time.Millisecond * 100)
 

@@ -20,7 +20,9 @@ import (
 )
 
 const (
-	notifierSize = 1000
+	// HTTPNotifier implements asynchronous processing of webhook in a fifo queue manner. This constant sets the size
+	// of that queue.
+	httpNotifierQueueSize = 1000
 )
 
 type envVars struct {
@@ -48,7 +50,7 @@ func runServerCommand(lg zerolog.Logger) {
 	)
 	lg.Debug().Str("dsn", dsn).Msg("calculated postgres dns string")
 
-	db, err := createDatabase(dsn, lg)
+	db, err := newGormDB(dsn, lg)
 	if err != nil {
 		lg.Fatal().Err(err).Msg("connecting to database failed")
 	}
@@ -61,7 +63,7 @@ func runServerCommand(lg zerolog.Logger) {
 
 	lg.Info().Int("port", cfg.Port).Msg("start tcp listener")
 
-	notifier := app.NewHTTPNotifier(lg, http.DefaultClient, cfg.NotifierWebHooks, notifierSize)
+	notifier := app.NewHTTPNotifier(lg, http.DefaultClient, cfg.NotifierWebHooks, httpNotifierQueueSize)
 
 	cancelNotifierChan := make(chan any)
 	doneNotifierChan := notifier.Start(cancelNotifierChan)
@@ -97,7 +99,7 @@ func runServerCommand(lg zerolog.Logger) {
 	lg.Info().Msg("server terminated successfully")
 }
 
-func createDatabase(dsn string, lg zerolog.Logger) (*gorm.DB, error) {
+func newGormDB(dsn string, lg zerolog.Logger) (*gorm.DB, error) {
 	var err error
 	var db *gorm.DB
 

@@ -22,6 +22,7 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password
       POSTGRES_DB: userdb
+      NOTIFIER_WEBHOOKS: "https://webhook.site/15e4a41e-9bd1-4608-9157-a9f46e9f5b84,https://webhook.site/49525789-a6ae-4f41-8518-4c2d3ae8f4c3"
 
     ports:
       # api port
