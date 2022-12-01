@@ -68,18 +68,18 @@ type envVars struct {
 
 ## Design
 
-## 1. Storing User Data
+### 1. Storing User Data
 
 I decided to use postgres to store the user data. Postgres is pretty much a good choice for such a use case.
 I used gorm library to simplify the data access layer code. I never used this lib before but wanted to give it a try.
 
-## 2. Providing API to do CRUD
+### 2. Providing API to do CRUD
 
 Only two options to choose from (`rest` and `grpc`). Typically, 
 I would use `rest` for use case unless wire efficiency and latency is crucial.
 Here, I used `grpc` just to be cool :).
 
-## 2. Pagination and Filtering Endpoint
+### 3. Pagination and Filtering Endpoint
 
 This feature is implemented via `UserStore.ListUsers` endpoint. Nothing special to design here.
 Example call:
@@ -90,7 +90,7 @@ Example call:
 grpcurl -plaintext -d '{"page": 2, "page_size": 6, "filters": {"email": "me@example.com"}  }'  localhost:8080  api.UserStore.ListUsers
 ```
 
-## 2. Asynchronous Notification Mechanism
+##$ 2. Asynchronous Notification Mechanism
 
 To allow other services getting notified when changes to use data happens, I decided to implement web hook for that.
 A comma seperated string of webhooks should be configured via `NOTIFIER_WEBHOOKS`. 
